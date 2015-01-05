@@ -1,11 +1,12 @@
 #include "Engine.h"
 #include "SFML/Graphics.hpp"
+#include <stdlib.h>
 
 Engine::Engine()
 {
     if(!init())
         throw("Init failed!");
-
+    auto a=42;
 }
 
 Engine::~Engine()
@@ -16,10 +17,11 @@ Engine::~Engine()
 
 bool Engine::init()
 {
+
     gridSize = 10;
     tileSize = 64;
 
-    window.create(sf::VideoMode(640, 640), "My window");
+    window.create(sf::VideoMode(640, 800), "My window");
 
     if(!img.loadFromFile("arrow.png"))
     {
@@ -27,21 +29,21 @@ bool Engine::init()
         return false;
     }
 
-    printf("proceeding to load from image\n");
 
     //printf("inter %i\n", img.getSize().x);
 
-    if(!arrow->loadFromImage(img))
+    if(!arrow.loadFromImage(img))
     {
         printf("load of image failed\n");
         return false;
     }
-    else
+
+
+    if(!font.loadFromFile("Roboto-Regular.ttf"))
     {
-        printf("image loading complete\n");
+        printf("load of font failed\n");
     }
 
-    printf("Init successful\n");
 
     return true;
 }
@@ -70,19 +72,17 @@ void Engine::gridMap()
 	for(int i=0; i < gridSize; i++)
 	{
 		//fills the map with empty spaces.
-        printf("0\n");
-		Node temp(0,0, arrow, true );
-		printf("1\n");
+		Node temp(0,0, nullptr, nullptr, true );
 		mNodes.at(i).resize(gridSize, temp);
 	}
-    printf("2\n");
+
     bool passable = true;
 
     for (int i = 0; i < gridSize; i++)
     {
         for(int j = 0; j < gridSize; j++)
         {
-            Node node(i, j, arrow, passable);
+            Node node(i, j, &arrow, &font, passable);
             mNodes[i][j] = node;
         }
     }
@@ -90,7 +90,14 @@ void Engine::gridMap()
     mNodes[0][0].setStart();
     mNodes[9][9].setEnd();
 
+    for (int i = 0; i < gridSize; i++)
+    {
+        for(int j = 0; j < gridSize; j++)
+        {
 
+            mNodes[i][j].setHeuristic(calculateHeuritics(&mNodes[i][j], &mNodes[9][9]));
+        }
+    }
 }
 
 void Engine::processInput()
@@ -111,8 +118,6 @@ void Engine::processInput()
             int posX = (int)(position.x/64);
             int posY = (int)(position.y/64);
 
-            //printf("posX: %i, posY: %i, x: %i, y: %i\n", (int)position.x, (int)position.y , posX, posY);
-
             if(event.mouseButton.button == sf::Mouse::Left)
             {
                 mNodes[posX][posY].setPassable();
@@ -124,6 +129,7 @@ void Engine::processInput()
 
 void Engine::draw()
 {
+	window.clear();
     for (int i = 0; i < gridSize; i++)
     {
         for(int j = 0; j < gridSize; j++)
@@ -145,6 +151,13 @@ void Engine::update()
         }
     }
 
+}
+
+int Engine::calculateHeuritics(Node* from, Node* target)
+{
+
+    return abs(from->getPosition().x - target->getPosition().x)
+    + abs(from->getPosition().y - target->getPosition().y);
 }
 
 

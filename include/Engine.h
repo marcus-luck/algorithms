@@ -21,12 +21,15 @@ class Engine
         void draw();
         void update();
 
+        int calculateHeuritics(Node* nodeFrom, Node* nodeTarget);
+
+    private:
         int gridSize;
         int tileSize;
 
         sf::RenderWindow window;
         sf::Font font;
-        sf::Texture* arrow;
+        sf::Texture arrow;
         sf::Image img;
 
         std::vector<std::vector<Node> > mNodes;

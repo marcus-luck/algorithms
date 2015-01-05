@@ -8,7 +8,7 @@ class Node
 , public sf::Transformable
 {
     public:
-        Node(int x, int y, sf::Texture *texture, bool passable);
+        Node(int x, int y, sf::Texture* texture, sf::Font* font1, bool passable);
 
         virtual ~Node();
 
@@ -19,6 +19,10 @@ class Node
         sf::FloatRect getBounds() const;
         void setStart() { start = true; }
         void setEnd() { ending = true; }
+
+		void setHeuristic(int heuristic);
+
+        int getHeuristic() { return heuristic; }
 
     private:
 
@@ -33,8 +37,10 @@ class Node
         sf::Sprite sArrow;
 
         sf::RectangleShape rect;
-        sf::IntRect pos;
-        int heuritic;
+        sf::Vector2i pos;
+        sf::Text h_text;
+
+        int heuristic;
         int movementCost;
         int fValue;
 
