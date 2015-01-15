@@ -23,9 +23,14 @@ class Engine
 
         int calculateHeuritics(Node* nodeFrom, Node* nodeTarget);
 
+        void calculatePath();
+        void findNeighbors();
+        void findNextNode();
+
     private:
         int gridSize;
         int tileSize;
+        int moveCost;
 
         sf::RenderWindow window;
         sf::Font font;
@@ -33,6 +38,10 @@ class Engine
         sf::Image img;
 
         std::vector<std::vector<Node> > mNodes;
+
+        std::vector<Node*> openList;
+        std::vector<Node*> closedList;
+        Node* currentNode;
 
         //Node* start;
         //Node* End;

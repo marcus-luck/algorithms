@@ -3,10 +3,12 @@
 #include <stdlib.h>
 
 Engine::Engine()
+: currentNode(nullptr)
+, moveCost(10)
 {
     if(!init())
         throw("Init failed!");
-    auto a=42;
+
 }
 
 Engine::~Engine()
@@ -29,9 +31,6 @@ bool Engine::init()
         return false;
     }
 
-
-    //printf("inter %i\n", img.getSize().x);
-
     if(!arrow.loadFromImage(img))
     {
         printf("load of image failed\n");
@@ -42,8 +41,8 @@ bool Engine::init()
     if(!font.loadFromFile("Roboto-Regular.ttf"))
     {
         printf("load of font failed\n");
+        return false;
     }
-
 
     return true;
 }
@@ -72,7 +71,7 @@ void Engine::gridMap()
 	for(int i=0; i < gridSize; i++)
 	{
 		//fills the map with empty spaces.
-		Node temp(0,0, nullptr, nullptr, true );
+		Node temp(0,0, arrow, font, true );
 		mNodes.at(i).resize(gridSize, temp);
 	}
 
@@ -82,13 +81,15 @@ void Engine::gridMap()
     {
         for(int j = 0; j < gridSize; j++)
         {
-            Node node(i, j, &arrow, &font, passable);
+            Node node(i, j, arrow, font, passable);
             mNodes[i][j] = node;
         }
     }
 
     mNodes[0][0].setStart();
     mNodes[9][9].setEnd();
+
+    currentNode = &mNodes[0][0];
 
     for (int i = 0; i < gridSize; i++)
     {
@@ -121,6 +122,11 @@ void Engine::processInput()
             if(event.mouseButton.button == sf::Mouse::Left)
             {
                 mNodes[posX][posY].setPassable();
+            }
+
+            if(event.mouseButton.button == sf::Mouse::Right)
+            {
+                calculatePath();
             }
         }
     }
@@ -158,6 +164,79 @@ int Engine::calculateHeuritics(Node* from, Node* target)
 
     return abs(from->getPosition().x - target->getPosition().x)
     + abs(from->getPosition().y - target->getPosition().y);
+}
+
+void Engine::calculatePath()
+{
+    closedList.push_back(currentNode);
+    printf("calculating path");
+
+    //Add neighbors to openList
+    findNeighbors();
+
+    findNextNode();
+
+}
+
+void Engine::findNeighbors()
+{
+
+    //Add neighbors to openList
+    int posX = (int)currentNode->getPosition().x;
+    int posY = (int)currentNode->getPosition().y;
+    printf("x: %i, y: %i", posX, posY);
+
+    if((posX+1) <= 9 && mNodes[posX+1][posY].getPassable() == true )
+    {
+        openList.push_back(&mNodes[posX+1][posY]);
+        mNodes[(posX+1)][posY].setDirection(Node::RIGHT);
+        mNodes[(posX+1)][posY].setParent(currentNode);
+        mNodes[(posX+1)][posY].setF(moveCost);
+            printf("right\n", posX+1);
+    }
+
+    if((posX-1) >= 0 && mNodes[posX-1][posY].getPassable() == true)
+    {
+        openList.push_back(&mNodes[posX-1][posY]);
+        mNodes[posX-1][posY].setDirection(Node::LEFT);
+        mNodes[posX-1][posY].setParent(currentNode);
+        mNodes[posX-1][posY].setF(moveCost);
+            printf("left\n");
+    }
+
+    if((posY+1) <= 9 && mNodes[posX][(posY+1)].getPassable() == true)
+    {
+        openList.push_back(&mNodes[posX][(posY+1)]);
+        mNodes[posX][(posY+1)].setDirection(Node::DOWN);
+        mNodes[posX][(posY+1)].setParent(currentNode);
+        mNodes[posX][(posY+1)].setF(moveCost);
+            printf("down\n");
+    }
+
+    if((posY-1) >= 0 && mNodes[posX][posY-1].getPassable() == true)
+    {
+        openList.push_back(&mNodes[posX][posY-1]);
+        mNodes[posX][posY-1].setDirection(Node::UP);
+        mNodes[posX][posY-1].setParent(currentNode);
+        mNodes[posX][posY-1].setF(moveCost);
+        printf("up\n");
+    }
+}
+
+void Engine::findNextNode()
+{
+
+    for(auto& node : openList)
+    {
+        printf("node: %i, cNode: %i", node->getF(), currentNode->getF());
+
+        if((node->getF()) <= currentNode->getF() || currentNode->getF() == 0)
+        {
+            currentNode = node;
+            printf("switch");
+        }
+
+    }
 }
 
 

@@ -3,20 +3,25 @@
 #include <string>
 #include "toString.hpp"
 
-Node::Node(int x, int y, sf::Texture* texture, sf::Font* font1, bool passable)
+Node::Node(int x, int y, sf::Texture& texture, sf::Font& font1, bool passable)
+: start(false)
+, ending(false)
+, passable(passable)
+, nodeSize(64)
+, fValue(0)
+, mParent(nullptr)
 {
-    this->passable = passable;
-    start = false;
-    ending = false;
-    nodeSize = 64;
     pos.x = x;
-    pos.y= y;
+    pos.y = y;
     setPosition(pos.x, pos.y);
+
     rect.setSize(sf::Vector2f((float)x*nodeSize, (float)y*nodeSize));
     rect.setOrigin(0.0f, 0.0f);
     rect.setSize(sf::Vector2f(100, 100));
 
-    //sArrow.setTexture(tex);
+    sArrow.setTexture(texture);
+    sArrow.setOrigin(sArrow.getLocalBounds().width/2, sArrow.getLocalBounds().height/2 );
+    sArrow.setPosition((float)(pos.x*nodeSize+nodeSize/2),(float)(pos.y*nodeSize+nodeSize/2));
 
     setFill();
 
@@ -24,13 +29,17 @@ Node::Node(int x, int y, sf::Texture* texture, sf::Font* font1, bool passable)
     rect.setOutlineColor(sf::Color(0, 0, 0));
     rect.setPosition((float)(pos.x*nodeSize),(float)(pos.y*nodeSize));
 
-    h_text.setFont(*font1);
+    h_text.setFont(font1);
     h_text.setCharacterSize(12);
     h_text.setColor(sf::Color(255,0,0,255));
     h_text.setOrigin(0.0f, 0.0f);
-	h_text.setPosition((float)(pos.x*nodeSize),(float)(pos.y*nodeSize));
+	h_text.setPosition((float)(pos.x*nodeSize+5),(float)(pos.y*nodeSize));
 
-
+    f_text.setFont(font1);
+    f_text.setCharacterSize(12);
+    f_text.setColor(sf::Color(0,0,255,255));
+    f_text.setOrigin(0.0f, 0.0f);
+	f_text.setPosition((float)(pos.x*nodeSize+50),(float)(pos.y*nodeSize));
 }
 
 Node::~Node()
@@ -44,7 +53,13 @@ void Node::draw(sf::RenderTarget& target, sf::RenderStates states) const
 
     target.draw(rect);
     target.draw(h_text);
-    target.draw(sArrow);
+    target.draw(f_text);
+
+    if(mParent != nullptr)
+    {
+        target.draw(sArrow);
+    }
+
 }
 
 void Node::update()
@@ -97,6 +112,37 @@ void Node::setHeuristic(int heuristic)
 	this->heuristic = heuristic;
 
 	h_text.setString(toString(heuristic));
+
+}
+
+void Node::setF(int moveCost)
+{
+    fValue = moveCost + heuristic;
+    f_text.setString(toString(fValue));
+}
+
+void Node::setDirection(parentDirection direction)
+{
+    switch(direction)
+    {
+    case LEFT:
+        sArrow.setRotation(180);
+        break;
+
+    case RIGHT:
+        sArrow.setRotation(0);
+        break;
+
+    case UP:
+        sArrow.setRotation(270);
+        break;
+
+    case DOWN:
+        sArrow.setRotation(90);
+        break;
+    }
+
+
 }
 
 
