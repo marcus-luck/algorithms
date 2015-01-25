@@ -26,6 +26,9 @@ class Engine
         void calculatePath();
         void findNeighbors();
         void findNextNode();
+		//bool F_sort(const Node& lNode, const Node& rNode) { return lNode.getF() > rNode.getF(); }
+		void setHeuristics();
+		void paintTrack();
 
     private:
         int gridSize;

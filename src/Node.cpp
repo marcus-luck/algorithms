@@ -49,7 +49,6 @@ Node::~Node()
 
 void Node::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
-    //states.transform *= getTransform();
 
     target.draw(rect);
     target.draw(h_text);

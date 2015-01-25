@@ -1,6 +1,7 @@
 #include "Engine.h"
 #include "SFML/Graphics.hpp"
 #include <stdlib.h>
+#include <algorithm>
 
 Engine::Engine()
 : currentNode(nullptr)
@@ -15,6 +16,7 @@ Engine::~Engine()
 {
     //dtor
     //delete arrow;
+
 }
 
 bool Engine::init()
@@ -37,7 +39,6 @@ bool Engine::init()
         return false;
     }
 
-
     if(!font.loadFromFile("Roboto-Regular.ttf"))
     {
         printf("load of font failed\n");
@@ -51,6 +52,7 @@ void Engine::run()
 {
     gridMap();
     printf("Starting\n");
+
     while(window.isOpen())
     {
 
@@ -89,16 +91,13 @@ void Engine::gridMap()
     mNodes[0][0].setStart();
     mNodes[9][9].setEnd();
 
+	mNodes[0][0].setInList(true);
+	mNodes[0][0].setClosed();
+	openList.push_back(&mNodes[0][0]);
     currentNode = &mNodes[0][0];
 
-    for (int i = 0; i < gridSize; i++)
-    {
-        for(int j = 0; j < gridSize; j++)
-        {
+	setHeuristics();
 
-            mNodes[i][j].setHeuristic(calculateHeuritics(&mNodes[i][j], &mNodes[9][9]));
-        }
-    }
 }
 
 void Engine::processInput()
@@ -124,7 +123,7 @@ void Engine::processInput()
                 mNodes[posX][posY].setPassable();
             }
 
-            if(event.mouseButton.button == sf::Mouse::Right)
+            if(event.mouseButton.button == sf::Mouse::Right && currentNode->getEnd() != true)
             {
                 calculatePath();
             }
@@ -162,19 +161,48 @@ void Engine::update()
 int Engine::calculateHeuritics(Node* from, Node* target)
 {
 
-    return abs(from->getPosition().x - target->getPosition().x)
-    + abs(from->getPosition().y - target->getPosition().y);
+    return (abs(from->getPosition().x - target->getPosition().x)
+    + abs(from->getPosition().y - target->getPosition().y))*10;
 }
 
 void Engine::calculatePath()
 {
+	//sort open list
+	std::sort(openList.begin(), openList.end(), [](const Node* lhs, const Node* rhs)
+	{
+		return lhs->getF() > rhs->getF();
+	});
+
+	//pick node with lowest f value from openlist
+	currentNode = openList.back();
+	openList.pop_back();
+
+	//move node from openlist to closed list
     closedList.push_back(currentNode);
-    printf("calculating path");
+	currentNode->setClosed();
+	currentNode->setInList(true);
+
+	//check if target is reached
+	if (currentNode->getEnd() == true)
+	{
+		paintTrack();
+	}
+
+    printf("calculating path\n");
 
     //Add neighbors to openList
     findNeighbors();
 
-    findNextNode();
+   // findNextNode();
+
+	
+	
+	//find neighbours
+	//add neigbours to openlist
+	//set parent of neighbours to currentnode
+	//calculate f & g value for neighbors
+	//
+	
 
 }
 
@@ -184,59 +212,92 @@ void Engine::findNeighbors()
     //Add neighbors to openList
     int posX = (int)currentNode->getPosition().x;
     int posY = (int)currentNode->getPosition().y;
-    printf("x: %i, y: %i", posX, posY);
+    printf("---- x: %i, y: %i ----\n", posX, posY);
 
-    if((posX+1) <= 9 && mNodes[posX+1][posY].getPassable() == true )
-    {
-        openList.push_back(&mNodes[posX+1][posY]);
-        mNodes[(posX+1)][posY].setDirection(Node::RIGHT);
-        mNodes[(posX+1)][posY].setParent(currentNode);
-        mNodes[(posX+1)][posY].setF(moveCost);
-            printf("right\n", posX+1);
-    }
+	int dx[4] = { 0, 1, -1, 0 };
+	int dy[4] = { 1, 0, 0, -1 };
 
-    if((posX-1) >= 0 && mNodes[posX-1][posY].getPassable() == true)
-    {
-        openList.push_back(&mNodes[posX-1][posY]);
-        mNodes[posX-1][posY].setDirection(Node::LEFT);
-        mNodes[posX-1][posY].setParent(currentNode);
-        mNodes[posX-1][posY].setF(moveCost);
-            printf("left\n");
-    }
+	for (int i = 0; i < 4; i++)
+	{
 
-    if((posY+1) <= 9 && mNodes[posX][(posY+1)].getPassable() == true)
-    {
-        openList.push_back(&mNodes[posX][(posY+1)]);
-        mNodes[posX][(posY+1)].setDirection(Node::DOWN);
-        mNodes[posX][(posY+1)].setParent(currentNode);
-        mNodes[posX][(posY+1)].setF(moveCost);
-            printf("down\n");
-    }
 
-    if((posY-1) >= 0 && mNodes[posX][posY-1].getPassable() == true)
-    {
-        openList.push_back(&mNodes[posX][posY-1]);
-        mNodes[posX][posY-1].setDirection(Node::UP);
-        mNodes[posX][posY-1].setParent(currentNode);
-        mNodes[posX][posY-1].setF(moveCost);
-        printf("up\n");
-    }
+		if (posX + dx[i] <= 9 &&
+			posX + dx[i] >= 0 &&
+			posY + dy[i] <= 9 &&
+			posY + dy[i] >= 0)
+		{
+			printf("  -- x: %i, y: %i ----\n", posX + dx[i], posY + dy[i]);
+			if (mNodes[posX + dx[i]][posY + dy[i]].getInList() != true)
+			{
+				printf("     node not in open list\n");
+			}
+
+			if (mNodes[posX + dx[i]][posY + dy[i]].getPassable() == true &&
+				mNodes[posX + dx[i]][posY + dy[i]].getInList() != true &&
+				mNodes[posX + dx[i]][posY + dy[i]].getClosed() != true)
+			{
+
+				openList.push_back(&mNodes[posX + dx[i]][posY + dy[i]]);
+				mNodes[posX + dx[i]][posY + dy[i]].setParent(currentNode);
+				mNodes[posX + dx[i]][posY + dy[i]].setF(moveCost);
+				mNodes[posX + dx[i]][posY + dy[i]].setInList(true);
+
+				switch (i)
+				{
+				case 0:
+					mNodes[posX + dx[i]][posY + dy[i]].setDirection(Node::DOWN);
+					break;
+
+				case 1:
+					mNodes[posX + dx[i]][posY + dy[i]].setDirection(Node::RIGHT);
+					break;
+
+				case 2:
+					mNodes[posX + dx[i]][posY + dy[i]].setDirection(Node::LEFT);
+					break;
+
+				case 3:
+					mNodes[posX + dx[i]][posY + dy[i]].setDirection(Node::UP);
+					break;
+				}
+			}
+		}
+	}
+
 }
 
 void Engine::findNextNode()
 {
+	//very expensive...
 
     for(auto& node : openList)
     {
-        printf("node: %i, cNode: %i", node->getF(), currentNode->getF());
+        printf("node: %i, cNode: %i\n", node->getF(), currentNode->getF());
 
         if((node->getF()) <= currentNode->getF() || currentNode->getF() == 0)
         {
             currentNode = node;
-            printf("switch");
+            printf("switch\n");
         }
 
     }
+
+	//move node from openList
 }
 
+void Engine::setHeuristics()
+{
+	for (int i = 0; i < gridSize; i++)
+	{
+		for (int j = 0; j < gridSize; j++)
+		{
 
+			mNodes[i][j].setHeuristic(calculateHeuritics(&mNodes[i][j], &mNodes[9][9]));
+		}
+	}
+}
+
+void Engine::paintTrack()
+{
+	printf("END reached!!");
+}

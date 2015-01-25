@@ -20,13 +20,20 @@ class Node
         sf::FloatRect getBounds() const;
         void setStart() { start = true; }
         void setEnd() { ending = true; }
+		bool getEnd() { return ending; }
 
 		void setHeuristic(int heuristic);
 
         int getHeuristic() { return heuristic; }
 
         void setF(int moveCost);
-        int getF() { return fValue; }
+        int getF() const { return fValue; }
+
+		void setInList(bool inList) { inList = this->inList; }
+		bool getInList() { return inList;  }
+
+		void setClosed() { closed = true; }
+		bool getClosed() { return closed; }
 
     private:
 
@@ -49,6 +56,9 @@ class Node
     private:
         int nodeSize;
 
+		bool inList;
+		bool closed;
+
         bool start;
         bool ending;
         int pDir;
@@ -62,6 +72,7 @@ class Node
 
         int heuristic;
         int movementCost;
+		int gValue;
         int fValue;
 
         bool passable;
